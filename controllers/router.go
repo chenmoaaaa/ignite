@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/go-ignite/ignite/config"
 	"github.com/go-ignite/ignite/ss"
 	"github.com/go-ignite/ignite/utils"
 	"github.com/go-xorm/xorm"
@@ -16,18 +17,17 @@ type MainRouter struct {
 }
 
 func (self *MainRouter) Initialize(r *gin.Engine) {
-	ss.Host = utils.HOST_Address
-	ss.PortRange = []int{utils.HOST_From, utils.HOST_To}
-
 	//Init session store
 	store := sessions.NewCookieStore([]byte("secret"))
 	r.Use(sessions.Sessions("ignite", store))
+	ss.Host = config.C.Host.Address
+	ss.PortRange = []int{config.C.Host.From, config.C.Host.To}
 
 	self.router = r
-	self.db = utils.InitDB(utils.DB_Driver, utils.DB_Connect)
 	self.router.GET("/", self.IndexHandler)
 	self.router.POST("/login", self.LoginHandler)
 	self.router.POST("/signup", self.SignupHandler)
+	self.db = utils.InitDB(config.C.DB.Driver, config.C.DB.Connect)
 
 	pg := self.router.Group("/panel")
 	pg.Use(ValidateSession())
@@ -45,5 +45,5 @@ func (self *MainRouter) Initialize(r *gin.Engine) {
 			log.Printf("Pull image [%s] error: %s\n", ss.SSR_IMAGE, err.Error())
 		}
 	}()
-	self.router.Run(utils.APP_Address)
+	self.router.Run(config.C.APP.Address)
 }
